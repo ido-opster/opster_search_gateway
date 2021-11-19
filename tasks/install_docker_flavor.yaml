@@ -1,0 +1,37 @@
+---
+- name: Create Search Gateway Directory
+  ansible.builtin.file:
+    path: "{{ config_folder }}"
+    state: directory
+    mode: 0755
+
+- name: Template Search Gateway Configuration Files
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ config_folder }}/{{ item }}"
+    mode: 0644
+  loop:
+     - default.conf
+     - logback.xml
+
+- name: Deploy Search Gateway Container
+  community.docker.docker_container:
+    name: "{{ docker_name }}"
+    hostname: "{{ docker_name }}"
+    env: "{{ docker_env }}"
+    network_mode: "{{ docker_network_mode }}"
+    image: "{{ docker_image }}:{{ docker_build }}"
+    pull: "{{ docker_pull }}"
+    ulimits: "{{ docker_ulimits }}"
+    cpu_period: "{{ docker_cpu_period }}"
+    cpu_quota: "{{ docker_cpu_quota }}"
+    memory: "{{ docker_memory }}"    
+    recreate: "{{ docker_recreate }}"
+    state: "{{ docker_state }}"
+    restart_policy: "{{ docker_restart_policy }}"
+    published_ports: "{{ docker_published_ports }}"
+    log_driver: "{{ docker_log_driver }}"
+    log_options: "{{ docker_log_options }}"
+    labels: "{{ docker_labels }}"        
+    volumes:
+      - "{{ config_folder }}/:/app/resources/"

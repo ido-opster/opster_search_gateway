@@ -1,0 +1,25 @@
+<configuration>
+<appender name="elasticsearch" class="com.opster.mclb.infrastructure.logs.ElasticSearchAppender">
+    <protocol>{{ logger_protocol }}</protocol>
+    <host>{{ logger_host }}</host>
+    <port>{{ logger_port }}</port>
+    <index>{{ logger_index }}</index>
+    <batchSize>{{ logger_batch_size }}</batchSize>
+    <docType>{{ logger_doc_type }}</docType>
+    <batchTimeoutInMilliseconds>{{ logger_batch_timeout }}</batchTimeoutInMilliseconds>
+    <retry>{{ logger_retry }}</retry>
+    {% if logger_auth.enable == True %}
+    <username>{{ logger_auth.username }}</username>
+    <password>{{ logger_auth.password }}</password>
+    {% endif %}
+</appender>
+<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+  <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+  </appender>
+  <logger name="elasticsearch_logger" level="info">
+      <appender-ref ref="elasticsearch" />
+  </logger>
+  <root level="info">
+      <appender-ref ref="console"/>
+  </root>
+</configuration>

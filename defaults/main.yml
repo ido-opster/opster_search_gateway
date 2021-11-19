@@ -1,0 +1,45 @@
+---
+config_folder: '/etc/opster/searchgateway'
+
+docker_name: 'search_gateway'
+docker_image: 'public.ecr.aws/opsterio/sgw'
+docker_build: 'latest'
+docker_pull: True
+docker_ulimits:
+  - "memlock:-1:-1"
+docker_recreate: True
+docker_state: 'started'
+docker_restart_policy: "unless-stopped"
+docker_published_ports:
+  - "0.0.0.0:9200:9200"
+  - "0.0.0.0:5555:5555"
+docker_env:
+  APP_VERSION: "{{ docker_build }}"
+docker_network_mode: "bridge"
+docker_cpu_period: 0
+docker_cpu_quota: 0
+docker_memory: 0
+docker_log_driver: "json-file"
+docker_log_options: "{}"
+docker_labels:
+  version: "{{ docker_build }}"
+
+
+# Application Defaults
+
+opster_mclb_port: 9200
+opster_mclb_backend_url: "http://localhost:9201"
+
+logger_protocol: "http"
+logger_host: "localhost"
+logger_port: 9201
+logger_index: "opster-sg"
+logger_batch_size: 10
+logger_doc_type: "doc"
+logger_batch_timeout: 5000
+logger_retry: 3
+
+logger_auth:
+  enable: False
+  username: 'elastic'
+  password: 'elastic'

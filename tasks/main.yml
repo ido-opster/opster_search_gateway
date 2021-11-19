@@ -1,0 +1,6 @@
+---
+  - name: Deploy Search Gateway Container
+    ansible.builtin.include_tasks:
+      file: install_docker_flavor.yaml    
+    tags:
+      - docker
