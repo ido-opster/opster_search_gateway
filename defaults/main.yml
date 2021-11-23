@@ -1,6 +1,7 @@
 ---
 config_folder: '/etc/opster/searchgateway'
 
+# Docker Defaults
 docker_name: 'search_gateway'
 docker_image: 'public.ecr.aws/opsterio/sgw'
 docker_build: 'latest'
@@ -24,22 +25,148 @@ docker_log_options: "{}"
 docker_labels:
   version: "{{ docker_build }}"
 
-
 # Application Defaults
+opster_sgw_version: 'latest'
+opster_sgw_port: 9200
 
-opster_mclb_port: 9200
-opster_mclb_backend_url: "http://localhost:9201"
+opster_sgw_logger_url:
+  protocol: "http"
+  host: "localhost"
+  port: 9201
 
-logger_protocol: "http"
-logger_host: "localhost"
-logger_port: 9201
-logger_index: "opster-sg"
-logger_batch_size: 10
-logger_doc_type: "doc"
-logger_batch_timeout: 5000
-logger_retry: 3
+opster_sgw_logger:
+  index: "opster-sg"
+  batch_size: 10
+  doc_type: "doc"
+  batch_timeout: 5000
+  retry: 3
+  auth:
+    # username: 'elastic'
+    # password: 'elastic'
 
-logger_auth:
-  enable: False
-  username: 'elastic'
-  password: 'elastic'
+opster_sgw_health_checker:
+  enable: "false"
+  threadPool: 1
+  periodInMilliSeconds: 1000
+
+opster_sgw_route:
+  userParameter: "X-User-Id"
+  analyzeQuery: "false"
+  searchConfigInElastic: "false"
+  useOpaque: "false"
+  logBody: "false"
+  logPreSend: "false"
+  sniffNodeIntervalInSeconds: 0
+
+# opster_sgw_sslserverloader:
+#   type: 'files'
+#   certFileName: '/app/resources/certs/cert.pem'
+#   privateKeyFileName: '/app/resources/certs/cert.key'
+
+opster_sgw_cacheconfiguration:
+  expensiveQueriesCacheSize: 1
+  slowQueriesCacheSize: 1
+  # cacheFetchFromTimeInHours: 
+  cacheBulkFetchSize: 0
+  maxFetching: 0
+
+opster_sgw_searchgateway:
+  heavySearchCostThreshold: 1000
+  slowSearchTimeInMilliThreshold: 1000
+  features:
+    regex:
+      cost: 100
+      factors:
+        HEAVY: 3
+        MEDIUM: 2
+        LIGHT: 1
+      classifier:
+        type: string
+        config:
+          contains:
+            cost: 10
+            values:
+              - "*"
+              - .*
+          startsWith:
+            cost: 100
+            values:
+              - .*
+              - "*"
+          pattern:
+            cost: 100
+            values:
+              - :\s?\*[^\s"]
+        thresholds:
+          HEAVY:
+            gte: 100
+          MEDIUM:
+            gt: 10
+            lt: 100
+          LIGHT:
+            lte: 10
+    data:
+      cost: 1
+      factors:
+        HEAVY: 3
+        MEDIUM: 2
+        LIGHT: 1
+      classifier:
+        type: math
+        config:
+          expression: "{{ '{{' }}size{{ '}}' }}"
+        thresholds:
+          HEAVY:
+            gt: 1000
+          MEDIUM:
+            gt: 100
+            lte: 1000
+          LIGHT:
+            lte: 100
+    range:
+      cost: 1
+      factors:
+        HEAVY: 1001
+        MEDIUM: 500
+        LIGHT: 1
+      classifier:
+        type: math
+        config:
+          expression: "{{ '{{' }}duration{{ '}}' }}"
+        thresholds:
+          HEAVY:
+            gte: 86400000
+          MEDIUM:
+            gt: 21600000
+            lt: 86400000
+          LIGHT:
+            lte: 21600000
+    aggregation:
+      cost: 100
+      factors:
+        HEAVY: 3
+        MEDIUM: 2
+        LIGHT: 1
+      classifier:
+        type: math
+        config:
+          expression: ({{ '{{' }}level{{ '}}' }} * {{ '{{' }}size{{ '}}' }}) * (1 * (1 + {{ '{{' }}hasScripts{{ '}}' }}))
+        thresholds:
+          HEAVY:
+            gt: 100000
+          MEDIUM:
+            gt: 1000
+            lte: 100000
+          LIGHT:
+            lte: 1000
+    script:
+      cost: 100
+      factors:
+        HEAVY: 3
+      classifier:
+        type: math
+        config:
+          expression: "{{ '{{' }}hasScript{{ '}}' }}"
+        thresholds:
+          HEAVY:
+            gte: 1

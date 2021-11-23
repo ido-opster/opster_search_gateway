@@ -1,16 +1,16 @@
 <configuration>
 <appender name="elasticsearch" class="com.opster.mclb.infrastructure.logs.ElasticSearchAppender">
-    <protocol>{{ logger_protocol }}</protocol>
-    <host>{{ logger_host }}</host>
-    <port>{{ logger_port }}</port>
-    <index>{{ logger_index }}</index>
-    <batchSize>{{ logger_batch_size }}</batchSize>
-    <docType>{{ logger_doc_type }}</docType>
-    <batchTimeoutInMilliseconds>{{ logger_batch_timeout }}</batchTimeoutInMilliseconds>
-    <retry>{{ logger_retry }}</retry>
-    {% if logger_auth.enable == True %}
-    <username>{{ logger_auth.username }}</username>
-    <password>{{ logger_auth.password }}</password>
+    <protocol>{{ opster_sgw_logger_url.protocol }}</protocol>
+    <host>{{ opster_sgw_logger_url.host }}</host>
+    <port>{{ opster_sgw_logger_url.port }}</port>
+    <index>{{ opster_sgw_logger.index }}</index>
+    <batchSize>{{ opster_sgw_logger.batch_size }}</batchSize>
+    <docType>{{ opster_sgw_logger.doc_type }}</docType>
+    <batchTimeoutInMilliseconds>{{ opster_sgw_logger.batch_timeout }}</batchTimeoutInMilliseconds>
+    <retry>{{ opster_sgw_logger.retry }}</retry>
+    {% if opster_sgw_logger.auth.username is defined and opster_sgw_logger.auth.password is defined %}
+    <username>{{ opster_sgw_logger.auth.username }}</username>
+    <password>{{ opster_sgw_logger.auth.password }}</password>
     {% endif %}
 </appender>
 <appender name="console" class="ch.qos.logback.core.ConsoleAppender">

@@ -5,6 +5,19 @@
     state: directory
     mode: 0755
 
+
+- name: Import Opster SGW Index Template
+  ansible.builtin.uri:
+    url: 'http://{{ docker_network_gw }}:9201/_template/opster-sg'
+    # user: your_username
+    # password: your_pass
+    method: 'POST'
+    # force_basic_auth: yes
+    status_code: 200
+    body_format: 'json'
+    remote_src: True
+    body: "{{ lookup('url', 'https://opster-rpms.s3.amazonaws.com/sgw/opster-sg-template.json', split_lines=False) }}"
+
 - name: Template Search Gateway Configuration Files
   ansible.builtin.template:
     src: "{{ item }}.j2"

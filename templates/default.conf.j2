@@ -1,167 +1,76 @@
 {
   opster.mclb: {
-    port: "{{ opster_mclb_port }}",
-    healthChecker:{
-            threadPool: 1,
-            periodInMilliSeconds: 1000
-        }
-    route: {
-      userParameter:"X-User-Id"
-    }
+    port: "{{ opster_sgw_port }}",
 
-    backends: [
+    healthChecker:{
+      threadPool: "{{ opster_sgw_health_checker.threadPool }}",
+      periodInMilliSeconds: "{{ opster_sgw_health_checker.periodInMilliSeconds }}",
+      enable: "{{ opster_sgw_health_checker.enable }}"
+    },
+
+    route: {
+      userParameter: "{{ opster_sgw_route.userParameter }}",
+      analyzeQuery:  "{{ opster_sgw_route.analyzeQuery }}",
+      searchConfigInElastic: "{{ opster_sgw_route.searchConfigInElastic }}",
+      useOpaque: "{{ opster_sgw_route.useOpaque }}",
+      logBody: "{{ opster_sgw_route.logBody }}",
+      logPreSend: "{{ opster_sgw_route.logPreSend }}",
+      sniffNodeIntervalInSeconds: "{{ opster_sgw_route.sniffNodeIntervalInSeconds }}"
+    },
+
+{% if opster_sgw_sslserverloader is defined %}
+    sslServerLoader:{
+      type: "{{ opster_sgw_sslserverloader.type }}",
+{% if opster_sgw_sslserverloader.type == 'files' %}
+      certFileName: "{{ opster_sgw_sslserverloader.certFileName }}",
+      privateKeyFileName: "{{ opster_sgw_sslserverloader.privateKeyFileName }}"
+{% elif opster_sgw_sslserverloader.type == 'key_store' %}
+      keyStoreType: "{{ opster_sgw_sslserverloader.keyStoreType }}",
+      keyStorePassword: "{{ opster_sgw_sslserverloader.keyStorePassword }}",
+      keyStoreFile: "{{ opster_sgw_sslserverloader.keyStoreFile }}",   
+{% endif %}
+    },
+{% endif %}
+
+    cacheConfiguration:{
+      expensiveQueriesCacheSize: "{{ opster_sgw_cacheconfiguration.expensiveQueriesCacheSize }}",
+      slowQueriesCacheSize: "{{ opster_sgw_cacheconfiguration.slowQueriesCacheSize }}",
+      cacheBulkFetchSize: "{{ opster_sgw_cacheconfiguration.cacheBulkFetchSize }}",
+      maxFetching: "{{ opster_sgw_cacheconfiguration.maxFetching }}"
+    },
+
+    backends:[
+{% for backend in opster_sgw_backends %}
       {
-        id: 1,
-        url: "{{ opster_mclb_backend_url }}",
-        default: true
-      }
+      id: "{{ loop.index }}",
+      url: "{{ backend.url }}",
+{% if backend.username is defined and backend.username is defined %}
+      authInfo: {
+        type: "BASIC"
+        credentials: { 
+          user: "{{ backend.username }}"
+          password: "{{ backend.username }}"
+        }
+      },
+{% endif %}
+      default: "{{ backend.default }}",
+{% if backend.sniff is defined %}
+      sniff: {
+          enabled: "true",
+          allowNodeRoles: "{{ backend.sniff.allowNodeRoles | default(omit)}}",
+          allowNodeNames: "{{ backend.sniff.allowNodeNames | default(omit)}}"
+          allowNodeIPs: "{{ backend.sniff.allowNodeIPs | default(omit)}}",
+          useDefaultElasticPort: "{{ backend.sniff.useDefaultElasticPort}}"
+        },
+{% endif %}
+      },
+{% endfor %}
     ],
 
   "searchGateway": {
-    "heavySearchCostThreshold": 1000,
-    "slowSearchTimeInMilliThreshold": 1000,
-    "features": {
-      "regex": {
-        "cost": 100,
-        "factors": {
-          "HEAVY": 3,
-          "MEDIUM": 2,
-          "LIGHT": 1
-        },
-        "classifier": {
-          "type": "string",
-          "config": {
-            "contains": {
-              "cost": 10,
-              "values": [
-                "*",
-                ".*"
-              ]
-            },
-            "startsWith": {
-              "cost": 100,
-              "values": [
-                ".*",
-                "*"
-              ]
-            },
-            "pattern": {
-              "cost": 100,
-              "values": [
-                ":\\s?\\*[^\\s\"]"
-              ]
-            }
-          },
-          "thresholds": {
-            "HEAVY": {
-              "gte": 100
-            },
-            "MEDIUM": {
-              "gt": 10,
-              "lt": 100
-            },
-            "LIGHT": {
-              "lte": 10
-            }
-          }
-        }
-      },
-      "data": {
-        "cost": 1,
-        "factors": {
-          "HEAVY": 3,
-          "MEDIUM": 2,
-          "LIGHT": 1
-        },
-        "classifier": {
-          "type": "math",
-          "config": {
-            "expression": {% raw %}"{{size}}"{% endraw %}
-          },
-          "thresholds": {
-            "HEAVY": {
-              "gt": 1000
-            },
-            "MEDIUM": {
-              "gt": 100,
-              "lte": 1000
-            },
-            "LIGHT": {
-              "lte": 100
-            }
-          }
-        }
-      },
-      "range": {
-        "cost": 1,
-        "factors": {
-          "HEAVY": 1001,
-          "MEDIUM": 500,
-          "LIGHT": 1
-        },
-        "classifier": {
-          "type": "math",
-          "config": {
-            "expression": {% raw %}"{{duration}}"{% endraw %}
-          },
-          "thresholds": {
-            "HEAVY": {
-              "gte": 86400000
-            },
-            "MEDIUM": {
-              "gt": 21600000,
-              "lt": 86400000
-            },
-            "LIGHT": {
-              "lte": 21600000
-            }
-          }
-        }
-      },
-      "aggregation": {
-        "cost": 100,
-        "factors": {
-          "HEAVY": 3,
-          "MEDIUM": 2,
-          "LIGHT": 1
-        },
-        "classifier": {
-          "type": "math",
-          "config": {
-            "expression": {% raw %}"({{level}} * {{size}}) * (1 * (1 + {{hasScripts}}))"{% endraw %}
-          },
-          "thresholds": {
-            "HEAVY": {
-              "gt": 100000
-            },
-            "MEDIUM": {
-              "gt": 1000,
-              "lte": 100000
-            },
-            "LIGHT": {
-              "lte": 1000
-            }
-          }
-        }
-      },
-      "script": {
-        "cost": 100,
-        "factors": {
-          "HEAVY": 3
-        },
-        "classifier": {
-          "type": "math",
-          "config": {
-            "expression": {% raw %}"{{hasScript}}"{% endraw %}
-          },
-          "thresholds": {
-            "HEAVY": {
-              "gte": 1
-            }
-          }
-        }
-      }
-    }
+    "heavySearchCostThreshold": "{{ opster_sgw_searchgateway.heavySearchCostThreshold }}",
+    "slowSearchTimeInMilliThreshold": "{{ opster_sgw_searchgateway.slowSearchTimeInMilliThreshold }}",
+    "features": {{ opster_sgw_searchgateway.features | to_nice_json(indent=2) }}
   }
   }
 }
