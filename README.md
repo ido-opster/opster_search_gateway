@@ -93,6 +93,8 @@ You can deploy using this playbook example. Replace with your `host:` group and 
       opster_sgw_backends:
         - url: 'http://es-backend-hostname:9200'
           default: 'true'
+          username: 'elastic'
+          password: 'my_secret'
     tags:
       - sgw
 ```
