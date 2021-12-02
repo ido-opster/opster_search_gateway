@@ -12,6 +12,11 @@ Requirements
 
 This role install all collections and role requirements by default. You have to only be sure to use Ansible 2.11 or above.
 
+```bash
+$ sudo apt|yum install python3-pip
+$ pip3 install --upgrade ansible-core==2.11.*
+```
+
 Role Variables
 --------------
 
