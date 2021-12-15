@@ -33,16 +33,19 @@
 {% endif %}
 
     cacheConfiguration:{
-      expensiveQueriesCacheSize: "{{ opster_sgw_cacheconfiguration.expensiveQueriesCacheSize }}",
+      expensiveQueriesCacheSize:"{{ opster_sgw_cacheconfiguration.expensiveQueriesCacheSize }}",
       slowQueriesCacheSize: "{{ opster_sgw_cacheconfiguration.slowQueriesCacheSize }}",
       cacheBulkFetchSize: "{{ opster_sgw_cacheconfiguration.cacheBulkFetchSize }}",
-      maxFetching: "{{ opster_sgw_cacheconfiguration.maxFetching }}"
-    },
+      cacheFetchFromTimeInHours:"{{ opster_sgw_cacheconfiguration.cacheFetchFromTimeInHours }}",
+      dumpCacheIntervalInHours:"{{ opster_sgw_cacheconfiguration.cacheFetchFromTimeInHours }}",
+      loadFromCache:true,
+      index: "{{ opster_sgw_cacheconfiguration.cacheIndex }}"
+    }
 
     backends:[
 {% for backend in opster_sgw_backends %}
       {
-      id: "{{ loop.index }}",
+      id: "{{ loop.index }}", #index param should start from 1 and then 1 will be default
       url: "{{ backend.url }}",
 {% if backend.username is defined and backend.username is defined %}
       authInfo: {
@@ -53,7 +56,6 @@
         }
       },
 {% endif %}
-      default: "{{ backend.default }}",
 {% if backend.sniff is defined %}
       sniff: {
           enabled: "true",
@@ -66,6 +68,30 @@
       },
 {% endfor %}
     ],
+
+    "errorHandling": {
+      "enabled': true
+      "kafka": {
+        "bootstrapServers": "kafka:9092",
+        "groupId": "mclb",
+        "topic": "mclb-"
+      }
+    },
+
+
+    tenants: {
+      {% for tenant in opster_sgw_tenants %}
+      "{{tenant.name}}": {
+        patterns: ["{{tenant.regexPattern}}"],
+        leader:"{{tenant.leader}}"
+        {% if tenant.follower is defined %}
+        follower:"{{tenant.follower}}"
+        {% endif %}
+      }
+      {% endfor %}
+    }
+
+
 
   "searchGateway": {
     "heavySearchCostThreshold": "{{ opster_sgw_searchgateway.heavySearchCostThreshold }}",
